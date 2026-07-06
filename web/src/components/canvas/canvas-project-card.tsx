@@ -27,7 +27,8 @@ export function CanvasProjectCard({ project }: { project: CanvasProject }) {
     };
 
     return (
-        <article className="group flex min-h-44 cursor-pointer flex-col justify-between rounded-2xl bg-[#f1eee8] p-5 transition hover:bg-[#ebe6dc] dark:bg-white/5 dark:hover:bg-white/10" onClick={() => !editing && open()}>
+        <article className="console-card console-card-hover group flex min-h-52 cursor-pointer flex-col justify-between p-5" onClick={() => !editing && open()}>
+            <div className="pointer-events-none mb-4 h-20 rounded-xl border" style={{ borderColor: "var(--console-line)", background: "linear-gradient(90deg, rgba(34,211,238,.12) 1px, transparent 1px), linear-gradient(rgba(34,211,238,.10) 1px, transparent 1px)", backgroundSize: "18px 18px" }} />
             <div className="flex items-start gap-3">
                 <input
                     type="checkbox"
@@ -48,9 +49,9 @@ export function CanvasProjectCard({ project }: { project: CanvasProject }) {
                             open();
                         }}
                     >
-                        <h2 className="truncate text-xl font-semibold">{project.title}</h2>
-                        <p className="mt-3 text-sm leading-6 text-stone-600 dark:text-stone-400">
-                            {project.nodes.length} 个节点 · {project.connections.length} 条连线
+                        <h2 className="truncate text-xl font-semibold text-[var(--console-text)]">{project.title}</h2>
+                        <p className="mt-3 font-mono text-xs uppercase tracking-[0.12em] text-[var(--console-muted)]">
+                            {project.nodes.length} nodes · {project.connections.length} links
                         </p>
                     </button>
                 )}

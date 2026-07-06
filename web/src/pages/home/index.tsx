@@ -35,35 +35,37 @@ export default function IndexPage() {
     }, [message]);
 
     return (
-        <main className="relative h-full overflow-y-auto bg-background bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] text-stone-950 dark:bg-[radial-gradient(rgba(245,245,244,.18)_1px,transparent_1px)] dark:text-stone-100">
-            <section className="relative mx-auto min-h-[calc(100vh-4rem)] max-w-7xl overflow-hidden px-6">
-                <div className="pointer-events-none absolute left-[15%] top-24 size-20 rounded-full border border-dashed border-stone-200 dark:border-stone-800" />
-                <div className="pointer-events-none absolute right-[23%] top-[48%] size-20 rounded-full border border-dashed border-stone-200 dark:border-stone-800" />
-
-                <div className="relative flex min-h-[620px] flex-col items-center justify-center pt-10 text-center">
-                    <h1 className="ai-title-aurora max-w-5xl text-balance text-5xl font-semibold tracking-normal sm:text-7xl lg:text-8xl">无限画布</h1>
-                    <p className="mt-8 max-w-3xl text-balance text-lg leading-8 text-stone-500 dark:text-stone-400">
-                        在
-                        <Highlighter action="underline" color="#FF9800">
-                            无限画布
-                        </Highlighter>
-                        中生成、连接和重组
-                        <Highlighter action="highlight" color="#87CEFA">
-                            图片、文字与图形
-                        </Highlighter>
-                        ，让创作从单次生成变成连续推演。
-                    </p>
-                    <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+        <main className="app-page-shell app-page-bg relative h-full">
+            <section className="app-page-container relative min-h-[calc(100vh-4rem)]">
+                <div className="app-page-hero relative min-h-[560px] px-6 py-16 text-center sm:px-10 lg:px-16">
+                    <div className="pointer-events-none absolute -left-16 top-16 size-44 rounded-full border border-dashed border-border/80" />
+                    <div className="pointer-events-none absolute -right-10 bottom-20 size-32 rounded-full border border-dashed border-border/80" />
+                    <div className="mx-auto flex max-w-5xl flex-col items-center justify-center">
+                        <span className="app-page-kicker">Creative Ops Canvas</span>
+                        <h1 className="ai-title-aurora mt-7 max-w-5xl text-balance text-5xl font-semibold tracking-tight sm:text-7xl lg:text-8xl">无限画布</h1>
+                        <p className="mt-8 max-w-3xl text-balance text-lg leading-8 text-muted-foreground">
+                            在
+                            <Highlighter action="underline" color="#FF9800">
+                                无限画布
+                            </Highlighter>
+                            中生成、连接和重组
+                            <Highlighter action="highlight" color="#87CEFA">
+                                图片、文字与图形
+                            </Highlighter>
+                            ，让创作从单次生成变成连续推演。
+                        </p>
+                        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
                         <Button type="primary" size="large" onClick={() => navigate(`/${primaryTool.slug}`)} icon={<ArrowRight className="size-4" />} iconPlacement="end">
                             开始使用
                         </Button>
-                        <Button size="large" onClick={() => navigate("/canvas")}>
-                            打开画布
-                        </Button>
+                            <Button size="large" onClick={() => navigate("/canvas")}>
+                                打开画布
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
-                <section className="relative mx-auto mb-20 max-w-6xl border-t border-stone-200 pt-12 dark:border-stone-800">
+                <section className="app-section-panel relative mx-auto mt-10 max-w-6xl p-6 sm:p-8">
                     <div className="mb-8 grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-start">
                         <div />
                         <div className="max-w-2xl text-center">
@@ -84,12 +86,16 @@ export default function IndexPage() {
                                     setPreviewOpen(true);
                                 }}
                                 className={cn(
-                                    "group relative cursor-pointer overflow-hidden border border-stone-200 bg-stone-100 text-left dark:border-stone-800 dark:bg-stone-900",
+                                    "group relative cursor-pointer overflow-hidden rounded-2xl border border-border/80 bg-secondary text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl",
                                     index === 0 && "md:col-span-2 md:row-span-2",
                                     index === 3 && "md:col-span-2",
                                 )}
                             >
-                                <img src={item.coverUrl} alt={item.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+                                {item.coverUrl?.trim() ? (
+                                    <img src={item.coverUrl.trim()} alt={item.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center bg-secondary text-xs text-muted-foreground">无封面</div>
+                                )}
                                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/35 to-transparent p-4 text-white">
                                     <div className="mb-2 flex flex-wrap gap-1.5">
                                         {item.tags.slice(0, 2).map((tag) => (
@@ -115,9 +121,11 @@ export default function IndexPage() {
                 }}
             >
                 <div className="hidden">
-                    {promptShowcase.map((item) => (
-                        <Image key={item.id} src={item.coverUrl} alt={item.title} />
-                    ))}
+                    {promptShowcase
+                        .filter((item) => item.coverUrl?.trim())
+                        .map((item) => (
+                            <Image key={item.id} src={item.coverUrl.trim()} alt={item.title} />
+                        ))}
                 </div>
             </Image.PreviewGroup>
         </main>

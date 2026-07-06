@@ -305,9 +305,9 @@ export default function ImagePage() {
     };
 
     return (
-        <div className="flex h-full flex-col overflow-hidden bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100">
-            <main className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 lg:grid-cols-[300px_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[320px_minmax(0,1fr)]">
-                <aside className="thin-scrollbar hidden min-h-0 overflow-y-auto rounded-lg border border-stone-200 bg-card p-4 shadow-sm dark:border-stone-800 lg:block">
+        <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
+            <main className="app-page-bg grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[300px_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[320px_minmax(0,1fr)]">
+                <aside className="thin-scrollbar app-section-panel hidden min-h-0 overflow-y-auto p-4 lg:block">
                     <LogPanel
                         logs={logs}
                         selectedLogIds={selectedLogIds}
@@ -320,11 +320,12 @@ export default function ImagePage() {
                 </aside>
 
                 <section className="grid gap-3 lg:min-h-0 lg:overflow-hidden xl:grid-cols-[420px_minmax(0,1fr)]">
-                    <div className="thin-scrollbar flex flex-col rounded-lg border border-stone-200 bg-card p-4 shadow-sm dark:border-stone-800 lg:min-h-0 lg:overflow-y-auto">
+                    <div className="thin-scrollbar app-section-panel flex flex-col p-5 lg:min-h-0 lg:overflow-y-auto">
                         <div>
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                    <h1 className="text-2xl font-semibold text-stone-950 dark:text-stone-100">生图工作台</h1>
+                                    <span className="app-page-kicker">Image Lab</span>
+                                    <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">生图工作台</h1>
                                 </div>
                                 <div className="flex shrink-0 gap-2 lg:hidden">
                                     <Button icon={<History className="size-4" />} onClick={() => setLogsOpen(true)}>
@@ -413,7 +414,7 @@ export default function ImagePage() {
                         </div>
                     </div>
 
-                    <div className="thin-scrollbar rounded-lg border border-stone-200 bg-card p-4 shadow-sm dark:border-stone-800 lg:min-h-0 lg:overflow-y-auto lg:p-5">
+                    <div className="thin-scrollbar app-section-panel p-5 lg:min-h-0 lg:overflow-y-auto">
                         <div className="mb-4 flex items-center justify-between gap-3">
                             <div>
                                 <h2 className="text-xl font-semibold">生成结果</h2>

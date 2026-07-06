@@ -186,13 +186,15 @@ export default function AssetsPage() {
     };
 
     return (
-        <div className="flex h-full flex-col overflow-hidden bg-background text-stone-900 dark:text-stone-100">
-            <main className="min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] px-6 py-8 [background-size:16px_16px] dark:bg-[radial-gradient(rgba(245,245,244,.14)_1px,transparent_1px)]">
-                <div className="pb-8">
-                    <div className="mx-auto max-w-5xl text-center">
-                        <h1 className="text-4xl font-semibold tracking-tight text-stone-950 dark:text-stone-100">我的素材</h1>
-                        <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">收藏常用文本和图片，按类型、标题和标签快速查找。</p>
-                    </div>
+        <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
+            <main className="app-page-shell app-page-bg min-h-0 flex-1">
+                <div className="app-page-container">
+                    <section className="app-page-hero text-center">
+                        <span className="app-page-kicker">Asset Vault</span>
+                        <h1 className="mt-5 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">我的素材</h1>
+                        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">收藏常用文本和图片，按类型、标题和标签快速查找。</p>
+                    </section>
+                    <div className="pb-8 pt-8">
 
                     <div className="mx-auto mt-8 w-full max-w-2xl">
                         <Input.Search
@@ -281,6 +283,7 @@ export default function AssetsPage() {
                                 setPageSize(nextPageSize);
                             }}
                         />
+                    </div>
                     </div>
                 </div>
             </main>

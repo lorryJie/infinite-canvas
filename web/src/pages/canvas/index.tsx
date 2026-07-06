@@ -13,7 +13,7 @@ import { useCanvasStore } from "@/stores/canvas/use-canvas-store";
 import { useCanvasUiStore } from "@/stores/canvas/use-canvas-ui-store";
 import { exportCanvasProjects } from "@/lib/canvas/canvas-export";
 
-export default function CanvasPage() {
+function CanvasPageInner() {
     const { message } = App.useApp();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -68,12 +68,13 @@ export default function CanvasPage() {
     if (hydrated && (mode === "new" || mode === "recent")) return <main className="flex h-full items-center justify-center bg-background text-sm text-stone-500">正在打开画布...</main>;
 
     return (
-        <main className="h-full overflow-auto bg-background text-stone-950 dark:text-stone-100">
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
-                <header className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-6 dark:border-stone-800">
+        <main className="app-page-shell app-page-bg h-full">
+            <div className="app-page-container flex flex-col gap-8">
+                <header className="app-page-hero flex flex-wrap items-end justify-between gap-4">
                     <div>
-                        <p className="text-xs text-stone-500">画布库</p>
-                        <h1 className="mt-3 text-3xl font-semibold">无限画布</h1>
+                        <span className="app-page-kicker">Canvas Library</span>
+                        <h1 className="mt-5 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">无限画布</h1>
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">管理你的创作项目，把节点、连线、参考素材和生成历史沉淀成可复用流程。</p>
                     </div>
                     <div className="flex items-center gap-2">
                         {selectedIds.length ? (
@@ -124,3 +125,5 @@ export default function CanvasPage() {
         </main>
     );
 }
+
+export default CanvasPageInner;

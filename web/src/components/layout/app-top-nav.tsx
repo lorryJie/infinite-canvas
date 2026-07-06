@@ -18,23 +18,28 @@ export function AppTopNav() {
     return (
         <>
             {!hideHeader ? (
-                <header className="sticky top-0 z-20 h-16 shrink-0 border-b border-stone-200 bg-background/90 backdrop-blur-xl dark:border-stone-800">
+                <header className="sticky top-0 z-20 h-16 shrink-0 border-b backdrop-blur-2xl" style={{ background: "var(--console-panel)", borderColor: "var(--console-line-strong)", boxShadow: "0 18px 60px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.08)" }}>
                     <div className="mx-auto flex h-full max-w-7xl items-stretch justify-between gap-5 px-6">
                         <div className="flex min-w-0 items-center">
-                            <Link to="/" className="flex h-full shrink-0 items-center gap-2 text-sm font-semibold leading-none tracking-tight text-stone-950 transition hover:text-stone-600 dark:text-stone-100 dark:hover:text-stone-300">
+                            <Link to="/" className="group flex h-full shrink-0 items-center gap-2 text-sm font-semibold leading-none tracking-tight text-foreground transition hover:text-primary">
                                 <span
-                                    className="size-5 shrink-0 bg-current"
-                                    style={{
-                                        mask: "url(/logo.svg) center / contain no-repeat",
-                                        WebkitMask: "url(/logo.svg) center / contain no-repeat",
-                                    }}
-                                />
-                                <span className="text-base font-medium">无限画布</span>
+                                    className="grid size-8 shrink-0 place-items-center rounded-xl border border-border/80 bg-card text-foreground shadow-sm transition group-hover:-translate-y-0.5 group-hover:border-primary/40"
+                                >
+                                    <span
+                                        className="size-4 shrink-0 bg-current"
+                                        style={{
+                                            mask: "url(/logo.svg) center / contain no-repeat",
+                                            WebkitMask: "url(/logo.svg) center / contain no-repeat",
+                                        }}
+                                    />
+                                </span>
+                                <span className="hidden text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-300/80 sm:inline">AI Creative OS</span>
+                                <span className="text-base font-semibold text-[var(--console-text)]">无限画布</span>
                             </Link>
 
                             <button
                                 type="button"
-                                className="ml-3 inline-flex size-8 shrink-0 items-center justify-center text-stone-600 transition hover:text-stone-950 md:hidden dark:text-stone-300 dark:hover:text-white"
+                                className="ml-3 inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/70 text-muted-foreground transition hover:bg-secondary hover:text-foreground md:hidden"
                                 onClick={() => setMobileNavOpen(true)}
                                 aria-label="打开导航菜单"
                                 title="导航菜单"
@@ -51,10 +56,10 @@ export function AppTopNav() {
                                             key={tool.slug}
                                             to={`/${tool.slug}`}
                                             className={cn(
-                                                "relative flex h-16 shrink-0 items-center gap-2 text-sm leading-6 transition after:absolute after:inset-x-0 after:bottom-0 after:h-px",
+                                                "relative flex h-16 shrink-0 items-center gap-2 px-1 font-mono text-xs uppercase tracking-[0.12em] transition after:absolute after:inset-x-0 after:bottom-0 after:h-0.5",
                                                 active
-                                                    ? "font-medium text-stone-950 after:bg-stone-950 dark:text-stone-100 dark:after:bg-stone-100"
-                                                    : "text-stone-500 after:bg-transparent hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100",
+                                                    ? "font-bold text-[var(--console-cyan)] after:bg-[var(--console-cyan)]"
+                                                    : "text-[var(--console-muted)] after:bg-transparent hover:text-[var(--console-text)]",
                                             )}
                                         >
                                             <Icon className="size-4" />

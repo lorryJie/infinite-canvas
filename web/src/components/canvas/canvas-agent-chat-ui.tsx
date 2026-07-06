@@ -169,15 +169,22 @@ export function AgentChatComposer({
     left?: ReactNode;
 }) {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const canSubmit = !disabled && !sending && Boolean(prompt.trim() || attachments.length);
+    const visibleAttachments = attachments.map((item) => ({ ...item, url: item.url.trim() }));
+    const canSubmit = !disabled && !sending && Boolean(prompt.trim() || visibleAttachments.some((item) => item.url));
     return (
         <div className="px-2 pb-2 pt-2" onWheelCapture={(event) => event.stopPropagation()}>
             <div className="rounded-[24px] border px-3 pb-3 pt-3 shadow-lg" style={{ background: theme.toolbar.panel, borderColor: theme.node.stroke }}>
-                {attachments.length ? (
+                {visibleAttachments.length ? (
                     <div className="thin-scrollbar mb-2 flex gap-2 overflow-x-auto pb-1">
-                        {attachments.map((item) => (
+                        {visibleAttachments.map((item) => (
                             <div key={item.id} className="group relative size-14 shrink-0 overflow-hidden rounded-xl border" style={{ borderColor: theme.node.stroke }} title={item.name}>
-                                <img src={item.url} alt={item.name} className="size-full object-cover" />
+                                {item.url ? (
+                                    <img src={item.url} alt={item.name} className="size-full object-cover" />
+                                ) : (
+                                    <div className="flex size-full items-center justify-center text-[10px]" style={{ background: theme.node.fill, color: theme.node.muted }}>
+                                        无图片
+                                    </div>
+                                )}
                                 {onRemoveAttachment ? (
                                     <button type="button" className="absolute right-1 top-1 grid size-5 place-items-center rounded-full border opacity-0 shadow-sm transition group-hover:opacity-100" style={{ background: theme.toolbar.panel, borderColor: theme.node.stroke, color: theme.node.text }} onClick={() => onRemoveAttachment(item.id)} aria-label="移除图片">
                                         <X className="size-3" />
@@ -284,9 +291,11 @@ function AgentUserAvatar({ user, theme }: { user: LocalUser | null; theme: (type
 }
 
 function AgentMessageAttachments({ attachments }: { attachments: CanvasAgentChatAttachment[] }) {
+    const visibleAttachments = attachments.map((item) => ({ ...item, url: item.url.trim() })).filter((item) => item.url);
+    if (!visibleAttachments.length) return null;
     return (
         <div className="mt-2 grid grid-cols-3 gap-1.5">
-            {attachments.map((item) => (
+            {visibleAttachments.map((item) => (
                 <img key={item.id} src={item.url} alt={item.name} className="aspect-square w-full rounded-lg object-cover" />
             ))}
         </div>

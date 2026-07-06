@@ -34,24 +34,7 @@ export function buildNodeGenerationContext(nodeId: string, nodes: CanvasNodeData
         return buildComposerGenerationContext(inputs, prompt);
     }
 
-    const upstreamText = inputs
-        .map((input) => input.text)
-        .filter(Boolean)
-        .join("\n\n");
-    const referenceImages = inputs.map((input) => input.image).filter((image): image is ReferenceImage => Boolean(image));
-    const referenceVideos = inputs.map((input) => input.video).filter((video): video is ReferenceVideo => Boolean(video));
-    const referenceAudios = inputs.map((input) => input.audio).filter((audio): audio is ReferenceAudio => Boolean(audio));
-
-    return {
-        prompt: upstreamText ? `${prompt}\n\n${upstreamText}` : prompt,
-        referenceImages,
-        referenceVideos,
-        referenceAudios,
-        textCount: inputs.filter((input) => input.type === "text").length,
-        imageCount: referenceImages.length,
-        videoCount: referenceVideos.length,
-        audioCount: referenceAudios.length,
-    };
+    return buildConnectedGenerationContext(inputs, prompt);
 }
 
 function buildComposerGenerationContext(inputs: NodeGenerationInput[], prompt: string): NodeGenerationContext {
@@ -88,18 +71,7 @@ function buildComposerGenerationContext(inputs: NodeGenerationInput[], prompt: s
     const referenceVideos = selectedInputs.map((input) => input.video).filter((video): video is ReferenceVideo => Boolean(video));
     const referenceAudios = selectedInputs.map((input) => input.audio).filter((audio): audio is ReferenceAudio => Boolean(audio));
 
-    if (!hasToken) {
-        return {
-            prompt,
-            referenceImages: [],
-            referenceVideos: [],
-            referenceAudios: [],
-            textCount: 0,
-            imageCount: 0,
-            videoCount: 0,
-            audioCount: 0,
-        };
-    }
+    if (!hasToken) return buildConnectedGenerationContext(inputs, prompt);
 
     return {
         prompt: nextPrompt,
@@ -107,6 +79,27 @@ function buildComposerGenerationContext(inputs: NodeGenerationInput[], prompt: s
         referenceVideos,
         referenceAudios,
         textCount: counts.text,
+        imageCount: referenceImages.length,
+        videoCount: referenceVideos.length,
+        audioCount: referenceAudios.length,
+    };
+}
+
+function buildConnectedGenerationContext(inputs: NodeGenerationInput[], prompt: string): NodeGenerationContext {
+    const upstreamText = inputs
+        .map((input) => input.text)
+        .filter(Boolean)
+        .join("\n\n");
+    const referenceImages = inputs.map((input) => input.image).filter((image): image is ReferenceImage => Boolean(image));
+    const referenceVideos = inputs.map((input) => input.video).filter((video): video is ReferenceVideo => Boolean(video));
+    const referenceAudios = inputs.map((input) => input.audio).filter((audio): audio is ReferenceAudio => Boolean(audio));
+
+    return {
+        prompt: upstreamText ? `${prompt}\n\n${upstreamText}` : prompt,
+        referenceImages,
+        referenceVideos,
+        referenceAudios,
+        textCount: inputs.filter((input) => input.type === "text").length,
         imageCount: referenceImages.length,
         videoCount: referenceVideos.length,
         audioCount: referenceAudios.length,
@@ -158,12 +151,14 @@ function generationLabel(type: NodeGenerationInput["type"], index: number) {
 }
 
 function readReferenceImage(node: CanvasNodeData): ReferenceImage | null {
-    if (node.type !== CanvasNodeType.Image || !node.metadata?.content) return null;
+    if (node.type !== CanvasNodeType.Image || (!node.metadata?.content && !node.metadata?.storageKey)) return null;
+    const dataUrl = node.metadata.content || node.metadata.storageKey || "";
     return {
         id: node.id,
         name: `${node.title || node.id}.png`,
         type: node.metadata.mimeType || "image/png",
-        dataUrl: node.metadata.content,
+        dataUrl,
+        url: node.metadata.content?.startsWith("data:") ? undefined : node.metadata.content,
         storageKey: node.metadata.storageKey,
     };
 }

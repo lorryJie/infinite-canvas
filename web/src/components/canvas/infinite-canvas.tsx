@@ -177,6 +177,10 @@ export function InfiniteCanvas({ containerRef, viewport, backgroundMode = "lines
             onDrop={onDrop}
         >
             <CanvasGrid viewport={viewport} mode={backgroundMode} />
+            <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(circle at 18% 16%, rgba(34,211,238,.14), transparent 34%), radial-gradient(circle at 82% 72%, rgba(167,139,250,.12), transparent 30%)" }} />
+            <div className="pointer-events-none absolute inset-0 opacity-20" style={{ background: "repeating-linear-gradient(180deg, rgba(255,255,255,.06) 0, rgba(255,255,255,.06) 1px, transparent 1px, transparent 6px)" }} />
+            <div className="pointer-events-none absolute left-20 right-20 top-20 h-px" style={{ background: `linear-gradient(90deg, transparent, ${theme.canvas.selectionStroke}, transparent)` }} />
+            <div className="pointer-events-none absolute bottom-20 left-20 right-20 h-px" style={{ background: `linear-gradient(90deg, transparent, ${theme.canvas.selectionStroke}, transparent)`, opacity: 0.45 }} />
             <div
                 className="absolute origin-top-left"
                 style={{

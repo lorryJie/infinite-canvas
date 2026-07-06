@@ -1349,20 +1349,24 @@ function InfiniteCanvasPage() {
     const pasteSystemClipboard = useCallback(async () => {
         if (!navigator.clipboard) return;
 
-        const items = await navigator.clipboard.read();
-        const imageItem = items.find((item) => item.types.some((type) => type.startsWith("image/")));
-        if (imageItem) {
-            const imageType = imageItem.types.find((type) => type.startsWith("image/"));
-            if (!imageType) return;
-            const blob = await imageItem.getType(imageType);
-            const file = new File([blob], "clipboard-image.png", { type: imageType });
-            void createImageFileNode(file, getCanvasCenter());
-            message.success("已从剪切板添加图片");
-            return;
-        }
+        try {
+            const items = await navigator.clipboard.read();
+            const imageItem = items.find((item) => item.types.some((type) => type.startsWith("image/")));
+            if (imageItem) {
+                const imageType = imageItem.types.find((type) => type.startsWith("image/"));
+                if (!imageType) return;
+                const blob = await imageItem.getType(imageType);
+                const file = new File([blob], "clipboard-image.png", { type: imageType });
+                await createImageFileNode(file, getCanvasCenter());
+                message.success("已从剪切板添加图片");
+                return;
+            }
 
-        const text = await navigator.clipboard.readText();
-        if (createTextNodeFromClipboard(text)) message.success("已从剪切板添加文本");
+            const text = await navigator.clipboard.readText();
+            if (createTextNodeFromClipboard(text)) message.success("已从剪切板添加文本");
+        } catch (error) {
+            message.error(error instanceof Error ? error.message : "读取剪切板失败");
+        }
     }, [createImageFileNode, createTextNodeFromClipboard, getCanvasCenter, message]);
 
     useEffect(() => {
@@ -1834,92 +1838,96 @@ function InfiniteCanvasPage() {
             const target = uploadTargetRef.current;
             if (!file || (!file.type.startsWith("image/") && !file.type.startsWith("video/") && !isAudioFile(file))) return;
 
-            if (target?.nodeId) {
-                if (isAudioFile(file)) {
-                    const audio = await uploadMediaFile(file, "audio");
-                    const spec = NODE_DEFAULT_SIZE[CanvasNodeType.Audio];
-                    setNodes((prev) => prev.map((node) => (node.id === target.nodeId ? { ...node, type: CanvasNodeType.Audio, title: file.name, position: { x: node.position.x + node.width / 2 - spec.width / 2, y: node.position.y + node.height / 2 - spec.height / 2 }, width: spec.width, height: spec.height, metadata: { ...node.metadata, ...audioMetadata(audio), errorDetails: undefined } } : node)));
-                    setSelectedNodeIds(new Set([target.nodeId]));
-                    setSelectedConnectionId(null);
-                    uploadTargetRef.current = null;
-                    event.target.value = "";
-                    return;
-                }
-                if (file.type.startsWith("video/")) {
-                    const video = await uploadMediaFile(file, "video");
-                    const nextSize = fitNodeSize(video.width || 1280, video.height || 720, VIDEO_NODE_MAX_WIDTH, VIDEO_NODE_MAX_HEIGHT);
-                    setNodes((prev) => prev.map((node) => (node.id === target.nodeId ? { ...node, type: CanvasNodeType.Video, title: file.name, position: { x: node.position.x + node.width / 2 - nextSize.width / 2, y: node.position.y + node.height / 2 - nextSize.height / 2 }, width: nextSize.width, height: nextSize.height, metadata: { ...node.metadata, ...videoMetadata(video), errorDetails: undefined } } : node)));
+            try {
+                if (target?.nodeId) {
+                    if (isAudioFile(file)) {
+                        const audio = await uploadMediaFile(file, "audio");
+                        const spec = NODE_DEFAULT_SIZE[CanvasNodeType.Audio];
+                        setNodes((prev) => prev.map((node) => (node.id === target.nodeId ? { ...node, type: CanvasNodeType.Audio, title: file.name, position: { x: node.position.x + node.width / 2 - spec.width / 2, y: node.position.y + node.height / 2 - spec.height / 2 }, width: spec.width, height: spec.height, metadata: { ...node.metadata, ...audioMetadata(audio), errorDetails: undefined } } : node)));
+                        setSelectedNodeIds(new Set([target.nodeId]));
+                        setSelectedConnectionId(null);
+                        return;
+                    }
+                    if (file.type.startsWith("video/")) {
+                        const video = await uploadMediaFile(file, "video");
+                        const nextSize = fitNodeSize(video.width || 1280, video.height || 720, VIDEO_NODE_MAX_WIDTH, VIDEO_NODE_MAX_HEIGHT);
+                        setNodes((prev) => prev.map((node) => (node.id === target.nodeId ? { ...node, type: CanvasNodeType.Video, title: file.name, position: { x: node.position.x + node.width / 2 - nextSize.width / 2, y: node.position.y + node.height / 2 - nextSize.height / 2 }, width: nextSize.width, height: nextSize.height, metadata: { ...node.metadata, ...videoMetadata(video), errorDetails: undefined } } : node)));
+                        setSelectedNodeIds(new Set([target.nodeId]));
+                        setSelectedConnectionId(null);
+                        setDialogNodeId(target.nodeId);
+                        return;
+                    }
+                    const image = await uploadImage(file);
+                    const imageSize = fitNodeSize(image.width, image.height);
+                    setNodes((prev) =>
+                        prev.map((node) =>
+                            node.id === target.nodeId
+                                ? {
+                                      ...node,
+                                      type: CanvasNodeType.Image,
+                                      title: file.name,
+                                      width: imageSize.width,
+                                      height: imageSize.height,
+                                      metadata: {
+                                          ...node.metadata,
+                                          ...imageMetadata(image),
+                                          errorDetails: undefined,
+                                          freeResize: false,
+                                          isBatchRoot: undefined,
+                                          batchRootId: undefined,
+                                          batchChildIds: undefined,
+                                          batchUsesReferenceImages: undefined,
+                                          generationType: undefined,
+                                          model: undefined,
+                                          size: undefined,
+                                          quality: undefined,
+                                          count: undefined,
+                                          references: undefined,
+                                          primaryImageId: undefined,
+                                          imageBatchExpanded: undefined,
+                                      },
+                                  }
+                                : node,
+                        ),
+                    );
                     setSelectedNodeIds(new Set([target.nodeId]));
                     setSelectedConnectionId(null);
                     setDialogNodeId(target.nodeId);
-                    uploadTargetRef.current = null;
-                    event.target.value = "";
-                    return;
+                } else {
+                    const position = target?.position || screenToCanvas((containerRef.current?.getBoundingClientRect().left || 0) + size.width / 2, (containerRef.current?.getBoundingClientRect().top || 0) + size.height / 2);
+                    await (isAudioFile(file) ? createAudioFileNode(file, position) : file.type.startsWith("video/") ? createVideoFileNode(file, position) : createImageFileNode(file, position));
                 }
-                const image = await uploadImage(file);
-                const size = fitNodeSize(image.width, image.height);
-                setNodes((prev) =>
-                    prev.map((node) =>
-                        node.id === target.nodeId
-                            ? {
-                                  ...node,
-                                  type: CanvasNodeType.Image,
-                                  title: file.name,
-                                  width: size.width,
-                                  height: size.height,
-                                  metadata: {
-                                      ...node.metadata,
-                                      ...imageMetadata(image),
-                                      errorDetails: undefined,
-                                      freeResize: false,
-                                      isBatchRoot: undefined,
-                                      batchRootId: undefined,
-                                      batchChildIds: undefined,
-                                      batchUsesReferenceImages: undefined,
-                                      generationType: undefined,
-                                      model: undefined,
-                                      size: undefined,
-                                      quality: undefined,
-                                      count: undefined,
-                                      references: undefined,
-                                      primaryImageId: undefined,
-                                      imageBatchExpanded: undefined,
-                                  },
-                              }
-                            : node,
-                    ),
-                );
-                setSelectedNodeIds(new Set([target.nodeId]));
-                setSelectedConnectionId(null);
-                setDialogNodeId(target.nodeId);
-            } else {
-                const position = target?.position || screenToCanvas((containerRef.current?.getBoundingClientRect().left || 0) + size.width / 2, (containerRef.current?.getBoundingClientRect().top || 0) + size.height / 2);
-                void (isAudioFile(file) ? createAudioFileNode(file, position) : file.type.startsWith("video/") ? createVideoFileNode(file, position) : createImageFileNode(file, position));
+            } catch (error) {
+                message.error(error instanceof Error ? error.message : "上传文件失败");
+            } finally {
+                uploadTargetRef.current = null;
+                event.target.value = "";
             }
-
-            uploadTargetRef.current = null;
-            event.target.value = "";
         },
-        [createAudioFileNode, createImageFileNode, createVideoFileNode, screenToCanvas, size.height, size.width],
+        [createAudioFileNode, createImageFileNode, createVideoFileNode, message, screenToCanvas, size.height, size.width],
     );
 
     const handleDrop = useCallback(
         (event: ReactDragEvent<HTMLDivElement>) => {
             event.preventDefault();
-            const file = Array.from(event.dataTransfer.files).find((item) => item.type.startsWith("image/") || item.type.startsWith("video/") || isAudioFile(item));
-            if (!file) return;
+            const files = Array.from(event.dataTransfer.files).filter((item) => item.type.startsWith("image/") || item.type.startsWith("video/") || isAudioFile(item));
+            if (!files.length) return;
 
             const pos = screenToCanvas(event.clientX, event.clientY);
-            void (isAudioFile(file) ? createAudioFileNode(file, pos) : file.type.startsWith("video/") ? createVideoFileNode(file, pos) : createImageFileNode(file, pos));
+            void Promise.allSettled(files.map((file, index) => (isAudioFile(file) ? createAudioFileNode(file, { x: pos.x + index * 32, y: pos.y + index * 32 }) : file.type.startsWith("video/") ? createVideoFileNode(file, { x: pos.x + index * 32, y: pos.y + index * 32 }) : createImageFileNode(file, { x: pos.x + index * 32, y: pos.y + index * 32 })))).then((results) => {
+                const failed = results.filter((result) => result.status === "rejected");
+                if (failed.length) message.error(`${failed.length} 个文件导入失败`);
+            });
         },
-        [createAudioFileNode, createImageFileNode, createVideoFileNode, screenToCanvas],
+        [createAudioFileNode, createImageFileNode, createVideoFileNode, message, screenToCanvas],
     );
 
     const pasteAssistantImage = useCallback(
         (file: File) => {
             const position = screenToCanvas((containerRef.current?.getBoundingClientRect().left || 0) + size.width / 2, (containerRef.current?.getBoundingClientRect().top || 0) + size.height / 2);
-            void createImageFileNode(file, position);
-            message.success("已从剪切板添加图片");
+            void createImageFileNode(file, position)
+                .then(() => message.success("已从剪切板添加图片"))
+                .catch((error) => message.error(error instanceof Error ? error.message : "添加剪切板图片失败"));
         },
         [createImageFileNode, message, screenToCanvas, size.height, size.width],
     );
@@ -1984,11 +1992,8 @@ function InfiniteCanvasPage() {
                     const isConfigNode = sourceNode?.type === CanvasNodeType.Config;
                     const isImageNode = sourceNode?.type === CanvasNodeType.Image;
                     const isEmptyImageNode = isImageNode && !sourceNode?.metadata?.content;
-                    const sourceReference =
-                        isImageNode && sourceNode?.metadata?.content
-                            ? [{ id: sourceNode.id, name: `${sourceNode.title || sourceNode.id}.png`, type: sourceNode.metadata.mimeType || "image/png", dataUrl: sourceNode.metadata.content, storageKey: sourceNode.metadata.storageKey }]
-                            : [];
-                    const referenceImages = sourceReference.length ? sourceReference : generationContext.referenceImages;
+                    const sourceReference = sourceNodeReferenceImages(sourceNode || null);
+                    const referenceImages = mergeReferenceImages(sourceReference, generationContext.referenceImages);
                     const generationType = referenceImages.length ? ("edit" as const) : ("generation" as const);
                     const generationMetadata = buildImageGenerationMetadata(generationType, generationConfig, count, referenceImages);
                     const parentConfig = NODE_DEFAULT_SIZE[isConfigNode ? CanvasNodeType.Config : isImageNode ? CanvasNodeType.Image : CanvasNodeType.Text];
@@ -2489,8 +2494,8 @@ function InfiniteCanvasPage() {
     if (!projectLoaded) return <CanvasRefreshShell />;
 
     return (
-        <main className="flex h-full min-h-0 overflow-hidden" style={{ background: theme.canvas.background, color: theme.node.text }}>
-            <section className="relative min-w-0 flex-1 overflow-hidden">
+        <main className="console-bg flex h-full min-h-0 overflow-hidden" style={{ background: theme.canvas.background, color: theme.node.text }}>
+            <section className="relative min-w-0 flex-1 overflow-hidden border-x" style={{ borderColor: theme.toolbar.border }}>
                 <CanvasTopBar
                     title={currentProject?.title || "未命名画布"}
                     titleDraft={titleDraft}
@@ -2874,7 +2879,7 @@ function CanvasTopBar({
 
     return (
         <>
-            <div className="pointer-events-none absolute left-0 right-0 top-0 z-50 flex h-16 items-center justify-between px-4">
+            <div className="pointer-events-none absolute left-3 right-3 top-3 z-50 flex h-14 items-center justify-between gap-3 rounded-2xl border px-3 shadow-2xl backdrop-blur-2xl" style={{ background: theme.toolbar.panel, borderColor: theme.toolbar.border, boxShadow: "0 18px 70px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.08)" }}>
                 <div className="pointer-events-auto flex min-w-0 items-center gap-3">
                     <Dropdown
                         trigger={["click"]}
@@ -2894,10 +2899,12 @@ function CanvasTopBar({
                             ],
                         }}
                     >
-                        <button type="button" className="grid size-9 place-items-center rounded-full transition hover:bg-black/5 dark:hover:bg-white/10" style={{ color: theme.node.text }} aria-label="打开画布菜单">
+                        <button type="button" className="grid size-9 place-items-center rounded-xl border font-mono text-xs transition hover:-translate-y-0.5" style={{ color: theme.node.text, borderColor: theme.toolbar.border, background: theme.toolbar.itemHover }} aria-label="打开画布菜单">
                             <Menu className="size-5" />
                         </button>
                     </Dropdown>
+
+                    <div className="hidden items-center gap-2 rounded-xl border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.18em] opacity-70 sm:flex" style={{ borderColor: theme.toolbar.border, color: theme.node.muted }}>AI Creative OS</div>
 
                     <div ref={titleRef} className="flex min-w-0 items-center gap-2">
                         {isTitleEditing ? (
@@ -2916,7 +2923,7 @@ function CanvasTopBar({
                         ) : (
                             <button
                                 type="button"
-                                className="max-w-[280px] truncate border-b border-dashed border-transparent text-left text-lg font-semibold tracking-normal transition hover:border-current"
+                                className="max-w-[280px] truncate border-b border-dashed border-transparent text-left text-base font-semibold tracking-tight transition hover:border-current sm:text-lg"
                                 onDoubleClick={onStartTitleEditing}
                                 title="双击修改画布名称"
                             >
@@ -2927,6 +2934,9 @@ function CanvasTopBar({
                 </div>
 
                 <div className="pointer-events-auto flex items-center gap-1.5">
+                    <div className="hidden h-9 min-w-[220px] items-center rounded-xl border px-3 font-mono text-xs md:flex" style={{ borderColor: theme.toolbar.border, background: theme.toolbar.itemHover, color: theme.node.muted }}>
+                        ⌘K / 生成、选择、编排节点
+                    </div>
                     {compactAgentStatus ? <CompactAgentStatus status={compactAgentStatus} onClick={onToggleAgent} /> : null}
                     <UserStatusActions
                         variant="canvas"
@@ -3061,7 +3071,7 @@ function buildAudioGenerationMetadata(config: AiConfig): CanvasNodeMetadata {
 }
 
 function referenceUrl(image: ReferenceImage) {
-    return image.storageKey || image.url || (!image.dataUrl.startsWith("data:") ? image.dataUrl : undefined);
+    return image.storageKey || image.url || image.dataUrl || undefined;
 }
 
 function generationReferenceUrls(context: { referenceImages: ReferenceImage[]; referenceVideos: Array<{ storageKey?: string; url?: string }>; referenceAudios?: Array<{ storageKey?: string; url?: string }> }) {
@@ -3199,14 +3209,28 @@ function findRetrySourceNode(nodeId: string, nodes: CanvasNodeData[], connection
     return null;
 }
 
+function mergeReferenceImages(...groups: ReferenceImage[][]) {
+    const seen = new Set<string>();
+    const result: ReferenceImage[] = [];
+    groups.flat().forEach((image) => {
+        const key = image.storageKey || image.url || image.dataUrl || image.id;
+        if (seen.has(key)) return;
+        seen.add(key);
+        result.push(image);
+    });
+    return result;
+}
+
 function sourceNodeReferenceImages(node: CanvasNodeData | null) {
-    if (!node || node.type !== CanvasNodeType.Image || !node.metadata?.content) return [];
+    if (!node || node.type !== CanvasNodeType.Image || (!node.metadata?.content && !node.metadata?.storageKey)) return [];
+    const dataUrl = node.metadata.content || node.metadata.storageKey || "";
     return [
         {
             id: node.id,
             name: `${node.title || node.id}.png`,
             type: node.metadata.mimeType || "image/png",
-            dataUrl: node.metadata.content,
+            dataUrl,
+            url: node.metadata.content?.startsWith("data:") ? undefined : node.metadata.content,
             storageKey: node.metadata.storageKey,
         },
     ];

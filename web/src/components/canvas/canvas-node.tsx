@@ -110,7 +110,8 @@ export const CanvasNode = React.memo(function CanvasNode({
     const isBatchRoot = data.type === CanvasNodeType.Image && Boolean(data.metadata?.isBatchRoot) && batchCount > 1;
     const isBatchChild = data.type === CanvasNodeType.Image && Boolean(data.metadata?.batchRootId);
     const isActive = isConnectionTarget || isSelected || isFocusRelated;
-    const imageBorderColor = isActive ? selectionBlue : isRelated && !isBatchChild ? theme.node.muted : "transparent";
+    const nodeVisual = nodeVisualByType(data.type);
+    const imageBorderColor = isActive ? theme.node.activeStroke : isRelated && !isBatchChild ? theme.node.muted : "transparent";
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const resizeRef = useRef({
         isResizing: false,
@@ -256,11 +257,11 @@ export const CanvasNode = React.memo(function CanvasNode({
             onContextMenu={(event) => onContextMenu(event, data.id)}
         >
             <div
-                className="relative h-full w-full overflow-visible rounded-3xl border-2"
+                className="relative h-full w-full overflow-visible rounded-2xl border"
                 style={{
-                    background: hasImageContent || hasVideoContent ? "transparent" : theme.node.fill,
-                    borderColor: hasImageContent ? imageBorderColor : isActive ? selectionBlue : isRelated ? theme.node.muted : theme.node.stroke,
-                    boxShadow: isActive ? `0 0 0 1px ${selectionBlue}55` : isRelated && !isBatchChild ? `0 0 0 1px ${theme.node.muted}55, 0 18px 48px rgba(0,0,0,.14)` : undefined,
+                    background: hasImageContent || hasVideoContent ? "transparent" : `linear-gradient(180deg, ${nodeVisual.tint}, ${theme.node.fill})`,
+                    borderColor: hasImageContent ? imageBorderColor : isActive ? nodeVisual.accent : isRelated ? theme.node.muted : theme.node.stroke,
+                    boxShadow: isActive ? `0 0 0 1px ${nodeVisual.accent}88, 0 0 36px ${nodeVisual.glow}` : isRelated && !isBatchChild ? `0 0 0 1px ${theme.node.muted}55, 0 18px 48px rgba(0,0,0,.22)` : `0 18px 54px rgba(0,0,0,.18)`,
                 }}
                 onMouseDown={(event) => onMouseDown(event, data.id)}
                 onDoubleClick={(event) => {
@@ -292,6 +293,10 @@ export const CanvasNode = React.memo(function CanvasNode({
                         } as React.CSSProperties
                     }
                 >
+                    <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-5 items-center justify-between rounded-t-[inherit] border-b px-2.5 font-mono text-[8px] font-bold uppercase tracking-[0.14em]" style={{ borderColor: theme.node.stroke, background: `${theme.node.panel}cc`, color: nodeVisual.accent }}>
+                        <span>{nodeVisual.label}</span>
+                        <span style={{ color: theme.node.muted }}>{data.metadata?.status || "idle"}</span>
+                    </div>
                     <NodeContent
                         node={data}
                         theme={theme}
@@ -350,22 +355,38 @@ const nodeContentRenderers = {
     [CanvasNodeType.Audio]: AudioNodeContent,
 } satisfies Record<CanvasNodeType, (props: NodeContentRendererProps) => ReactNode>;
 
+function nodeVisualByType(type: CanvasNodeType) {
+    if (type === CanvasNodeType.Text) return { label: "TEXT TERMINAL", accent: "#34d399", glow: "rgba(52,211,153,.22)", tint: "rgba(52,211,153,.06)" };
+    if (type === CanvasNodeType.Image) return { label: "IMAGE BUFFER", accent: "#22d3ee", glow: "rgba(34,211,238,.26)", tint: "rgba(34,211,238,.06)" };
+    if (type === CanvasNodeType.Video) return { label: "VIDEO STREAM", accent: "#a78bfa", glow: "rgba(167,139,250,.24)", tint: "rgba(167,139,250,.06)" };
+    if (type === CanvasNodeType.Audio) return { label: "AUDIO SIGNAL", accent: "#f59e0b", glow: "rgba(245,158,11,.24)", tint: "rgba(245,158,11,.06)" };
+    return { label: "EXEC CONFIG", accent: "#60a5fa", glow: "rgba(96,165,250,.24)", tint: "rgba(96,165,250,.06)" };
+}
+
 function LoadingContent({ theme }: Pick<NodeContentRendererProps, "theme">) {
     return (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-3" style={{ color: theme.node.activeStroke }}>
-            <div className="size-10 animate-spin rounded-full border-2" style={{ borderColor: theme.node.stroke, borderTopColor: theme.node.activeStroke }} />
-            <span className="text-[10px] tracking-[0.2em]">生成中</span>
+        <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-5 text-center" style={{ color: theme.node.activeStroke }}>
+            <div className="relative grid size-14 place-items-center rounded-2xl border" style={{ borderColor: theme.node.stroke, background: theme.toolbar.panel }}>
+                <div className="size-8 animate-spin rounded-full border-2" style={{ borderColor: theme.node.stroke, borderTopColor: theme.node.activeStroke }} />
+            </div>
+            <div>
+                <div className="text-[11px] font-semibold tracking-[0.22em]">生成中</div>
+                <div className="mt-1 text-[10px] opacity-55">正在等待模型返回结果</div>
+            </div>
         </div>
     );
 }
 
 function ErrorContent({ node, theme, onRetry }: Pick<NodeContentRendererProps, "node" | "theme" | "onRetry">) {
     return (
-        <div className="flex max-w-[260px] flex-col items-center gap-3 px-5 text-center">
-            <div className="text-xs leading-5 text-red-300">{node.metadata?.errorDetails || "生成失败"}</div>
+        <div className="flex max-w-[280px] flex-col items-center gap-3 px-5 text-center">
+            <div className="rounded-2xl border px-4 py-3" style={{ background: "rgba(220,38,38,.06)", borderColor: "rgba(220,38,38,.22)", color: "#ef4444" }}>
+                <div className="text-[11px] font-semibold tracking-[0.18em]">生成失败</div>
+                <div className="mt-1 line-clamp-4 text-xs leading-5">{node.metadata?.errorDetails || "模型没有返回可用结果"}</div>
+            </div>
             <button
                 type="button"
-                className="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition hover:scale-[1.02]"
+                className="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                 style={{ background: theme.toolbar.panel, borderColor: theme.toolbar.border, color: theme.node.text }}
                 onClick={(event) => {
                     event.stopPropagation();
@@ -374,7 +395,7 @@ function ErrorContent({ node, theme, onRetry }: Pick<NodeContentRendererProps, "
                 onMouseDown={(event) => event.stopPropagation()}
             >
                 <RefreshCw className="size-3.5" />
-                重试
+                重新生成
             </button>
         </div>
     );
@@ -482,11 +503,14 @@ function ImageNodeContent(props: NodeContentRendererProps) {
 
 function EmptyImageContent({ theme, isBatchRoot, batchCount, batchExpanded, batchOpening, batchRecovering, onToggleBatch }: NodeContentRendererProps) {
     const content = (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-3" style={{ color: theme.node.placeholder }}>
-            <div className="flex size-14 items-center justify-center rounded-2xl" style={{ background: theme.toolbar.activeBg }}>
-                <ImageIcon className="size-6 opacity-30" />
+        <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-5 text-center" style={{ color: theme.node.placeholder }}>
+            <div className="flex size-16 items-center justify-center rounded-3xl border border-dashed" style={{ background: theme.toolbar.activeBg, borderColor: theme.node.stroke }}>
+                <ImageIcon className="size-7 opacity-35" />
             </div>
-            <span className="text-[10px] tracking-[0.18em] opacity-50">空图片节点</span>
+            <div>
+                <div className="text-[11px] font-semibold tracking-[0.18em] opacity-70">空图片节点</div>
+                <div className="mt-1 text-[10px] leading-4 opacity-45">上传图片，或连接到配置节点作为参考图</div>
+            </div>
         </div>
     );
     if (isBatchRoot)
@@ -501,9 +525,14 @@ function EmptyImageContent({ theme, isBatchRoot, batchCount, batchExpanded, batc
 function VideoNodeContent({ node, theme }: NodeContentRendererProps) {
     if (!node.metadata?.content)
         return (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-3" style={{ color: theme.node.placeholder }}>
-                <Video className="size-7 opacity-35" />
-                <span className="text-sm">空视频节点</span>
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-5 text-center" style={{ color: theme.node.placeholder }}>
+                <div className="flex size-16 items-center justify-center rounded-3xl border border-dashed" style={{ background: theme.toolbar.activeBg, borderColor: theme.node.stroke }}>
+                    <Video className="size-7 opacity-35" />
+                </div>
+                <div>
+                    <div className="text-[11px] font-semibold tracking-[0.18em] opacity-70">空视频节点</div>
+                    <div className="mt-1 text-[10px] leading-4 opacity-45">上传视频，或作为视频参考素材使用</div>
+                </div>
             </div>
         );
     return <video src={node.metadata.content} controls className="h-full w-full rounded-[18px] bg-black object-contain" data-canvas-no-zoom />;
@@ -512,9 +541,14 @@ function VideoNodeContent({ node, theme }: NodeContentRendererProps) {
 function AudioNodeContent({ node, theme }: NodeContentRendererProps) {
     if (!node.metadata?.content)
         return (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2" style={{ color: theme.node.placeholder }}>
-                <Music2 className="size-7 opacity-35" />
-                <span className="text-sm">空音频节点</span>
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-5 text-center" style={{ color: theme.node.placeholder }}>
+                <div className="flex size-16 items-center justify-center rounded-3xl border border-dashed" style={{ background: theme.toolbar.activeBg, borderColor: theme.node.stroke }}>
+                    <Music2 className="size-7 opacity-35" />
+                </div>
+                <div>
+                    <div className="text-[11px] font-semibold tracking-[0.18em] opacity-70">空音频节点</div>
+                    <div className="mt-1 text-[10px] leading-4 opacity-45">上传音频，或连接到配置节点参与生成</div>
+                </div>
             </div>
         );
     return (

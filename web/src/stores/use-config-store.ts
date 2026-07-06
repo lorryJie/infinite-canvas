@@ -56,29 +56,38 @@ export type WebdavSyncConfig = {
 export const CONFIG_STORE_KEY = "infinite-canvas:ai_config_store";
 export type ModelCapability = "image" | "video" | "text" | "audio";
 const CHANNEL_MODEL_SEPARATOR = "::";
-const OPENAI_BASE_URL = "https://api.openai.com";
+const OPENAI_BASE_URL = "http://127.0.0.1:8000/v1";
+const SUB2API_BASE_URL = "https://sub2api.xiaohong1314.top/v1";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
 
 export const defaultConfig: AiConfig = {
     channelMode: "local",
-    baseUrl: OPENAI_BASE_URL,
+    baseUrl: SUB2API_BASE_URL,
     apiKey: "",
     apiFormat: "openai",
     channels: [
         {
-            id: "default",
-            name: "默认渠道",
+            id: "sub2api",
+            name: "sub2api 公网",
+            baseUrl: SUB2API_BASE_URL,
+            apiKey: "",
+            apiFormat: "openai",
+            models: ["gpt-image-2", "gpt-5.5", "codex-auto-review"],
+        },
+        {
+            id: "chatgpt2api",
+            name: "本机 chatgpt2api",
             baseUrl: OPENAI_BASE_URL,
             apiKey: "",
             apiFormat: "openai",
-            models: ["gpt-image-2", "grok-imagine-video", "gpt-5.5", "gpt-4o-mini-tts"],
+            models: ["gpt-image-2", "gpt-5.5"],
         },
     ],
-    model: "default::gpt-image-2",
-    imageModel: "default::gpt-image-2",
-    videoModel: "default::grok-imagine-video",
-    textModel: "default::gpt-5.5",
-    audioModel: "default::gpt-4o-mini-tts",
+    model: "sub2api::gpt-image-2",
+    imageModel: "sub2api::gpt-image-2",
+    videoModel: "sub2api::gpt-image-2",
+    textModel: "sub2api::gpt-5.5",
+    audioModel: "sub2api::gpt-5.5",
     audioVoice: "alloy",
     audioFormat: "mp3",
     audioSpeed: "1",
@@ -88,11 +97,11 @@ export const defaultConfig: AiConfig = {
     videoGenerateAudio: "true",
     videoWatermark: "false",
     systemPrompt: "",
-    models: ["default::gpt-image-2", "default::grok-imagine-video", "default::gpt-5.5", "default::gpt-4o-mini-tts"],
-    imageModels: ["default::gpt-image-2"],
-    videoModels: ["default::grok-imagine-video"],
-    textModels: ["default::gpt-5.5"],
-    audioModels: ["default::gpt-4o-mini-tts"],
+    models: ["sub2api::gpt-image-2", "sub2api::gpt-5.5", "sub2api::codex-auto-review", "chatgpt2api::gpt-image-2", "chatgpt2api::gpt-5.5"],
+    imageModels: ["sub2api::gpt-image-2", "chatgpt2api::gpt-image-2"],
+    videoModels: ["sub2api::gpt-image-2", "chatgpt2api::gpt-image-2"],
+    textModels: ["sub2api::gpt-5.5", "chatgpt2api::gpt-5.5"],
+    audioModels: ["sub2api::gpt-5.5", "chatgpt2api::gpt-5.5"],
     quality: "auto",
     size: "1:1",
     count: "1",
